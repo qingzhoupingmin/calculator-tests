@@ -32,8 +32,9 @@ jobs:
 
       # 步骤3：构建Docker镜像
       - name: Build Docker image
-        working-directory: tests
-        run: docker build -t calculator-tests:latest .
+        run: |
+          cd tests
+          docker build -t calculator-tests:latest .
 
       # 步骤4：显示Docker镜像信息
       - name: Show Docker images
@@ -41,8 +42,8 @@ jobs:
 
       # 步骤5：在Docker中运行逻辑测试
       - name: Run logic tests in Docker
-        working-directory: tests
         run: |
+          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
             -v ../calculator:/app/calculator \
@@ -51,8 +52,8 @@ jobs:
 
       # 步骤6：在Docker中运行UI测试
       - name: Run UI tests in Docker
-        working-directory: tests
         run: |
+          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
             -v ../calculator:/app/calculator \
@@ -61,8 +62,8 @@ jobs:
 
       # 步骤7：在Docker中生成覆盖率报告
       - name: Generate coverage report in Docker
-        working-directory: tests
         run: |
+          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
             -v ../calculator:/app/calculator \
@@ -111,15 +112,15 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Build Docker image for Python ${{ matrix.python-version }}
-        working-directory: tests
         run: |
+          cd tests
           # 临时修改Dockerfile中的Python版本
           sed -i "s/FROM python:3.9-slim/FROM python:${{ matrix.python-version }}-slim/" Dockerfile
           docker build -t calculator-tests:py${{ matrix.python-version }} .
 
       - name: Test with Python ${{ matrix.python-version }}
-        working-directory: tests
         run: |
+          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
             -v ../calculator:/app/calculator \
