@@ -32,9 +32,7 @@ jobs:
 
       # 步骤3：构建Docker镜像
       - name: Build Docker image
-        run: |
-          cd tests
-          docker build -t calculator-tests:latest .
+        run: docker build -t calculator-tests:latest .
 
       # 步骤4：显示Docker镜像信息
       - name: Show Docker images
@@ -43,30 +41,27 @@ jobs:
       # 步骤5：在Docker中运行逻辑测试
       - name: Run logic tests in Docker
         run: |
-          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
+            -v ../calculator:/app/calculator \
             -e PYTHONPATH=/app \
             calculator-tests:latest pytest test_logic.py -v
 
       # 步骤6：在Docker中运行UI测试
       - name: Run UI tests in Docker
         run: |
-          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
+            -v ../calculator:/app/calculator \
             -e PYTHONPATH=/app \
             calculator-tests:latest pytest test_ui.py -v || echo "UI tests not implemented yet"
 
       # 步骤7：在Docker中生成覆盖率报告
       - name: Generate coverage report in Docker
         run: |
-          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
+            -v ../calculator:/app/calculator \
             -v $(pwd)/htmlcov:/app/tests/htmlcov \
             -e PYTHONPATH=/app \
             calculator-tests:latest pytest --cov=/app/calculator --cov-report=xml --cov-report=html --cov-report=term-missing
@@ -75,7 +70,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
-          file: tests/coverage.xml
+          file: ./coverage.xml
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
@@ -87,7 +82,7 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: tests/htmlcov/
+          path: ./htmlcov/
           retention-days: 30
 
       # 步骤10：上传测试结果
@@ -96,7 +91,7 @@ jobs:
         if: always()
         with:
           name: test-results
-          path: tests/.pytest_cache/
+          path: ./.pytest_cache/
 
   # 额外任务：多Python版本测试（可选）
   test-matrix:
@@ -113,16 +108,14 @@ jobs:
       
       - name: Build Docker image for Python ${{ matrix.python-version }}
         run: |
-          cd tests
           # 临时修改Dockerfile中的Python版本
           sed -i "s/FROM python:3.9-slim/FROM python:${{ matrix.python-version }}-slim/" Dockerfile
           docker build -t calculator-tests:py${{ matrix.python-version }} .
 
       - name: Test with Python ${{ matrix.python-version }}
         run: |
-          cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
+            -v ../calculator:/app/calculator \
             -e PYTHONPATH=/app \
             calculator-tests:py${{ matrix.python-version }} pytest test_logic.py -v
