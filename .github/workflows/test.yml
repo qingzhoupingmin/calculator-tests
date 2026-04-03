@@ -46,7 +46,7 @@ jobs:
           cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ../calculator:/app/calculator \
+            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
             -e PYTHONPATH=/app \
             calculator-tests:latest pytest test_logic.py -v
 
@@ -56,7 +56,7 @@ jobs:
           cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ../calculator:/app/calculator \
+            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
             -e PYTHONPATH=/app \
             calculator-tests:latest pytest test_ui.py -v || echo "UI tests not implemented yet"
 
@@ -66,7 +66,7 @@ jobs:
           cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ../calculator:/app/calculator \
+            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
             -v $(pwd)/htmlcov:/app/tests/htmlcov \
             -e PYTHONPATH=/app \
             calculator-tests:latest pytest --cov=/app/calculator --cov-report=xml --cov-report=html --cov-report=term-missing
@@ -123,6 +123,6 @@ jobs:
           cd tests
           docker run --rm \
             -v $(pwd):/app/tests \
-            -v ../calculator:/app/calculator \
+            -v ${GITHUB_WORKSPACE}/calculator:/app/calculator \
             -e PYTHONPATH=/app \
             calculator-tests:py${{ matrix.python-version }} pytest test_logic.py -v
