@@ -34,22 +34,57 @@ jobs:
       - name: Build Docker image
         run: docker build -t calculator-tests:latest .
 
+      # 步骤3.5：显示环境信息
+      - name: Show environment info
+        run: |
+          echo "=== GitHub Workspace Info ==="
+          echo "GITHUB_WORKSPACE: ${{ github.workspace }}"
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Parent directory contents:"
+          ls -la ../
+
       # 步骤4：显示Docker镜像信息
       - name: Show Docker images
-        run: docker images | grep calculator-tests
+        run: |
+          echo "=== Docker Images ==="
+          docker images | grep calculator-tests
+          echo "=== End Docker Images ==="
 
       # 步骤5：在Docker中运行逻辑测试
       - name: Run logic tests in Docker
         run: |
+          echo "=== Pre-test Environment Info ==="
+          echo "Current directory: $(pwd)"
+          echo "Workspace: ${{ github.workspace }}"
+          echo "PYTHONPATH: $PYTHONPATH"
+          echo "=== Checking calculator directory ==="
+          ls -la ../calculator || echo "calculator directory not found at ../calculator"
+          echo "=== End Pre-test Info ==="
+          echo ""
+          
+          echo "=== Running tests ==="
           docker run --rm \
             -v $(pwd):/app/tests \
             -v ${{ github.workspace }}/calculator:/app/calculator \
             -e PYTHONPATH=/app \
-            calculator-tests:latest pytest test_logic.py -v
+            -e GITHUB_WORKSPACE=${{ github.workspace }} \
+            calculator-tests:latest pytest test_logic.py -v || true
+          
+          echo "=== Post-test Environment Info ==="
+          docker run --rm \
+            -v $(pwd):/app/tests \
+            -v ${{ github.workspace }}/calculator:/app/calculator \
+            -e PYTHONPATH=/app \
+            calculator-tests:latest python -c "import sys; print('Python path:', sys.path); import os; print('Calculator exists:', os.path.exists('/app/calculator'))"
 
       # 步骤6：在Docker中运行UI测试
       - name: Run UI tests in Docker
         run: |
+          echo "=== UI Test Environment ==="
+          echo "PYTHONPATH: $PYTHONPATH"
+          echo "=== Running UI tests ==="
           docker run --rm \
             -v $(pwd):/app/tests \
             -v ${{ github.workspace }}/calculator:/app/calculator \
@@ -59,6 +94,8 @@ jobs:
       # 步骤7：在Docker中生成覆盖率报告
       - name: Generate coverage report in Docker
         run: |
+          echo "=== Generating Coverage Report ==="
+          echo "PYTHONPATH: $PYTHONPATH"
           docker run --rm \
             -v $(pwd):/app/tests \
             -v ${{ github.workspace }}/calculator:/app/calculator \

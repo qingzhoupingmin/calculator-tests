@@ -9,8 +9,31 @@ def setup_module():
     """添加项目路径"""
     tests_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(tests_dir)
+    
+    # 调试信息
+    print(f"=== 路径调试信息 ===")
+    print(f"当前文件: {__file__}")
+    print(f"tests_dir: {tests_dir}")
+    print(f"parent_dir: {parent_dir}")
+    print(f"sys.path[0]: {sys.path[0] if sys.path else 'empty'}")
+    
+    # 检查calculator目录是否存在
+    calculator_path = os.path.join(parent_dir, "calculator")
+    print(f"calculator_path: {calculator_path}")
+    print(f"calculator exists: {os.path.exists(calculator_path)}")
+    print(f"calculator is dir: {os.path.isdir(calculator_path)}")
+    
+    # 列出parent_dir的内容
+    if os.path.exists(parent_dir):
+        print(f"parent_dir contents: {os.listdir(parent_dir)}")
+    
+    # 添加到Python路径
     if parent_dir not in sys.path:
         sys.path.insert(0, parent_dir)
+        print(f"添加路径到sys.path: {parent_dir}")
+    
+    print(f"最终sys.path[0:3]: {sys.path[:3]}")
+    print(f"===================")
 
 # 自动执行setup_module，确保路径设置在测试开始前完成
 @pytest.fixture(scope="session", autouse=True)
