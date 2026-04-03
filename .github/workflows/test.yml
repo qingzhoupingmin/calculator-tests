@@ -1,9 +1,9 @@
 # ====================================
-# GitHub Actions CI 配置文件
+# GitHub Actions CI 配置文件 - Docker融合版
 # ====================================
 
 # 工作流名称
-name: Calculator Tests
+name: Calculator Tests (Docker)
 
 # 触发条件：当代码推送到master或dev分支时触发
 on:
@@ -14,9 +14,9 @@ on:
 
 # 定义任务
 jobs:
-  # 任务名称：运行测试
-  test:
-    # 运行环境：最新版Ubuntu
+  # 任务名称：在Docker中运行测试
+  test-docker:
+    # 迥行环境：最新版Ubuntu（支持Docker）
     runs-on: ubuntu-latest
 
     # 步骤列表
@@ -25,45 +25,52 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 步骤2：设置Python环境
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+      # 步骤2：设置Docker Buildx（支持多平台构建）
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # 步骤3：显示Python版本
-      - name: Display Python version
-        run: python --version
-
-      # 步骤4：安装依赖
-      - name: Install dependencies
-        working-directory: ./tests
+      # 步骤3：构建Docker镜像
+      - name: Build Docker image
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirement.txt
+          cd tests
+          docker build -t calculator-tests:latest .
 
-      # 步骤5：运行逻辑测试
-      - name: Run logic tests
-        working-directory: ./tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: pytest test_logic.py -v
+      # 步骤4：显示Docker镜像信息
+      - name: Show Docker images
+        run: docker images | grep calculator-tests
 
-      # 步骤6：运行UI测试（如果存在）
-      - name: Run UI tests
-        working-directory: ./tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: pytest test_ui.py -v || echo "UI tests not implemented yet"
+      # 步骤5：在Docker中运行逻辑测试
+      - name: Run logic tests in Docker
+        run: |
+          cd tests
+          docker run --rm \
+            -v $(pwd):/app/tests \
+            -v ../calculator:/app/calculator \
+            -e PYTHONPATH=/app \
+            calculator-tests:latest pytest test_logic.py -v
 
-      # 步骤7：生成覆盖率报告
-      - name: Generate coverage report
-        working-directory: ./tests
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: pytest --cov=../calculator --cov-report=xml --cov-report=term-missing
+      # 步骤6：在Docker中运行UI测试
+      - name: Run UI tests in Docker
+        run: |
+          cd tests
+          docker run --rm \
+            -v $(pwd):/app/tests \
+            -v ../calculator:/app/calculator \
+            -e PYTHONPATH=/app \
+            calculator-tests:latest pytest test_ui.py -v || echo "UI tests not implemented yet"
 
-      # 步骤8：上传覆盖率报告
+      # 步骤7：在Docker中生成覆盖率报告
+      - name: Generate coverage report in Docker
+        run: |
+          cd tests
+          docker run --rm \
+            -v $(pwd):/app/tests \
+            -v ../calculator:/app/calculator \
+            -v $(pwd)/htmlcov:/app/tests/htmlcov \
+            -e PYTHONPATH=/app \
+            calculator-tests:latest pytest --cov=/app/calculator --cov-report=xml --cov-report=html --cov-report=term-missing
+
+      # 步骤8：上传覆盖率报告到Codecov
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -71,3 +78,49 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+      # 步骤9：上传HTML覆盖率报告
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: coverage-report
+          path: tests/htmlcov/
+          retention-days: 30
+
+      # 步骤10：上传测试结果
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: tests/.pytest_cache/
+
+  # 额外任务：多Python版本测试（可选）
+  test-matrix:
+    runs-on: ubuntu-latest
+    if: false  # 设为false禁用，需要时改为true
+    
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Build Docker image for Python ${{ matrix.python-version }}
+        run: |
+          cd tests
+          # 临时修改Dockerfile中的Python版本
+          sed -i "s/FROM python:3.9-slim/FROM python:${{ matrix.python-version }}-slim/" Dockerfile
+          docker build -t calculator-tests:py${{ matrix.python-version }} .
+      
+      - name: Test with Python ${{ matrix.python-version }}
+        run: |
+          cd tests
+          docker run --rm \
+            -v $(pwd):/app/tests \
+            -v ../calculator:/app/calculator \
+            -e PYTHONPATH=/app \
+            calculator-tests:py${{ matrix.python-version }} pytest test_logic.py -v
