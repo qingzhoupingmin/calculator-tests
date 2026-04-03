@@ -1,0 +1,44 @@
+# 加法测试数据
+addition:
+  - a: 1
+    b: 2
+    expected: 3
+  - a: -1
+    b: 1
+    expected: 0
+ 
+
+# 减法测试数据
+subtraction:
+  - a: 5
+    b: 3
+    expected: 2
+  - a: -5
+    b: -3
+    expected: -2
+
+# 乘法测试数据
+multiplication:
+  - a: 2
+    b: 3
+    expected: 6
+  - a: -2
+    b: 3
+    expected: -6
+
+# 除法测试数据
+division:
+  - a: 6
+    b: 3
+    expected: 2
+  - a: -6
+    b: 3
+    expected: -2
+
+# 异常测试数据（除0和类型错误）
+exceptions:
+  - a: 1
+    b: 0
+  
+  - a: 5
+    b: 0
