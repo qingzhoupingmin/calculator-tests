@@ -5,12 +5,12 @@
 # 工作流名称
 name: Calculator Tests (Docker)
 
-# 触发条件：当代码推送到master或dev分支时触发
+# 触发条件：当代码推送到main或dev分支时触发
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ master, dev ]
+    branches: [ main, dev ]
 
 # 定义任务
 jobs:
